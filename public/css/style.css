@@ -1,0 +1,21 @@
+.title {
+  font-size: 2em;
+  color: #303030;
+  font-weight: 700;
+  margin: 0;
+}
+
+.text {
+  font-size: 1em;
+  color: #494949;
+  font-weight: 400;
+  margin: 0;
+}
+
+.image-text-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  align-items: center;
+  margin: 0 1em;
+}

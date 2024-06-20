@@ -9,6 +9,32 @@ import 'grapesjs/dist/css/grapes.min.css'
 
 let editor = null;
 
+const getComponentsInOrder = (editor) => {
+  const components = editor.getComponents();
+  const componentsData = [];
+
+  function traverseComponents(components) {
+    components.each(component => {
+      componentsData.push({
+        id: component.getId(),
+        type: component.get('type'),
+        attributes: component.getAttributes(),
+        content: component.get('content'),
+        styles: component.get('style'), // Debería ser 'style' en lugar de 'styles'
+        component: component,
+      });
+
+      // Recorrer los componentes hijos si los hay
+      if (component.components().length) {
+        traverseComponents(component.components());
+      }
+    });
+  }
+
+  traverseComponents(components);
+  return componentsData;
+}
+
 onMounted(() => {
   editor = grape.init({
     container: '#gjs',
@@ -47,26 +73,66 @@ onMounted(() => {
     isComponent: el => el.dataset.gjsType === 'title-component',
     model: {
       defaults: {
-        tagName: 'h1',
+        tagName: 'div', // Use a div to avoid direct manipulation of h1
         draggable: true,
         dropable: false,
-        content: 'Título',
+        content: 'Hola',
+        attributes: { 'data-gjs-type': 'title-component' }
       }
     },
     view: {
       onRender() {
-        const vueComponent = createApp({
-          render: () => h(Title, {
-            content: this.model.get('content'),
-            onUpdateContent: content => {
-              this.model.set({ content });
-            },
-          }),
-        });
+        const self = this;
+
+        // Clear the inner HTML to avoid conflicts
         this.el.innerHTML = '';
-        vueComponent.mount(this.el)
+
+        // Create the Vue component and mount it
+        const vueComponent = createApp({
+          data() {
+            return {
+              content: self.model.get('content')
+            };
+          },
+          watch: {
+            content(newContent) {
+              // Update the model only if the content changes
+              self.model.set('content', newContent, { silent: true });
+            }
+          },
+          methods: {
+            updateContent(newContent) {
+              this.content = newContent;
+            }
+          },
+          render() {
+            return h(Title, {
+              content: this.content,
+              onUpdateContent: this.updateContent,
+            });
+          }
+        });
+
+        vueComponent.mount(this.el);
+
+        // Listen to model changes and update the Vue component
+        this.listenTo(self.model, 'change:content', () => {
+          const newContent = self.model.get('content');
+          vueComponent.component.updateContent(newContent);
+        });
       }
     }
+  });
+
+  editor.Panels.addButton("options", {
+    id: "save",
+    className: "fa fa-save icon-save",
+    command: (editor, sender) => {
+      console.log(getComponentsInOrder(editor));
+    },
+    attributes: {
+      title: "Save",
+    },
   });
 
   editor.DomComponents.addType('text-component', {

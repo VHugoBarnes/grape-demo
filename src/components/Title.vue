@@ -1,9 +1,11 @@
 <template>
   <h1
     :contenteditable="true"
-    @click="onInput"
+    @input="onInput"
     class="title"
-  >{{ content }}</h1>
+  >
+    {{ content }}
+  </h1>
 </template>
 
 <script>
@@ -12,12 +14,18 @@ export default {
   props: {
     content: {
       type: String,
-      default: 'Título',
+      default: 'KEKO KAKA',
+    },
+    onUpdateContent: {
+      type: Function,
+      required: true,
     },
   },
   methods: {
     onInput(event) {
-      this.$emit('update:content', event.target.innerText);
+      this.onUpdateContent(event.target.innerText);
+
+      // console.log("onInput", event.target.innerText)
     },
   },
 };
